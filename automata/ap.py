@@ -94,7 +94,13 @@ class AP(ABC):
         return self
 
     def transitions_table(self):
-        """Genera una tabla con las transiciones del autómata de pila."""
+        """
+        Genera una tabla con las transiciones del autómata de pila.
+        
+        La idea es simple: agrupa todas las transiciones por estado origen y las muestra
+        en formato legible. Cada transición muestra (símbolo_entrada, símbolo_pila) → (estado_destino, cadena_pila).
+        Los estados iniciales se marcan con ^ y los finales con *.
+        """
         if not self.transitions:
             return "No hay transiciones definidas."
 
@@ -104,10 +110,12 @@ class AP(ABC):
             if state not in state_transitions:
                 state_transitions[state] = []
             
-            # Manejar el caso de APD (tupla única) vs APND (conjunto de tuplas)
-            # Si targets es una tupla de 2 elementos donde el segundo es un string (la pila)
+            # Separamos en dos casos:
+            # - APD: guarda targets como tupla directa (estado, pila)
+            # - APND: guarda targets como lista/conjunto de tuplas [(estado, pila), ...]
+            # igual creo no necesito el APND
             if isinstance(targets, tuple) and len(targets) == 2 and isinstance(targets[1], str):
-                # APD: targets es directamente (new_state, stack_string)
+                # Caso 1: APD - targets es directamente (new_state, stack_string)
                 new_state, stack_string = targets
                 stack_str = stack_string if stack_string else SpecialStackSymbol.LAMBDA
                 input_str = input_sym if input_sym else SpecialStackSymbol.LAMBDA
@@ -116,7 +124,7 @@ class AP(ABC):
                     f"({input_str}, {stack_sym_str}) → ({new_state}, {stack_str})"
                 )
             else:
-                # APND o caso general: targets es una colección de tuplas
+                # Caso 2: APND - targets es una colección de tuplas
                 for new_state, stack_string in targets:
                     stack_str = stack_string if stack_string else SpecialStackSymbol.LAMBDA
                     input_str = input_sym if input_sym else SpecialStackSymbol.LAMBDA

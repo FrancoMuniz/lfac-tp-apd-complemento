@@ -130,7 +130,7 @@ class APD(AP):
 
     def accepts(self, word: str, acceptance_mode: str = "final_state") -> bool:
         """
-        Determina si el autómata acepta la cadena dada.
+        Determina si el autómata acepta la cadena de inpput.
         
         Args:
             word: Cadena a verificar
@@ -160,14 +160,17 @@ class APD(AP):
                     if not stack:
                         return True
             
-            # Intentar dar un paso
             result = self.step(state, remaining_input, stack)
             if result is None:
-                # No hay transición posible, el autómata se traba
+                # no hay transición posible, el automata se cuelga (no continuo)
                 break
             
             state, remaining_input, stack = result
         
+        #print("max steps alcanzados")
+        if steps == max_steps:
+            print("max steps alcanzados, el automata se cuelga en algun punto")
+            
         if not remaining_input:
             if acceptance_mode == "final_state":
                 return state in self.final_states
