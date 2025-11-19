@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 Prueba simple para verificar que los autómatas de pila funcionan correctamente.
+
+Generados con IA y verificados manualmente
 """
 
 from automata import APD, APDC

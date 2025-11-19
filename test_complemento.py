@@ -3,6 +3,8 @@
 Test de la implementación del complemento (Teorema 2.23)
 
 Prueba que el algoritmo crear_automata_complemento() funciona correctamente.
+
+Generados con IA y verificados manualmente
 """
 
 from automata import APDC
@@ -45,7 +47,7 @@ def test_complemento_lenguaje_simple():
     P.add_transition("q1", "q2", "b", "Z", "Z")    # b final -> ACEPTA
     P.add_transition("q1", "q2", "b", "A", "A")    # b final -> ACEPTA
     
-    # Transiciones para hacer el autómata CONTINUO (no se atasca)
+    # Transiciones para hacer el autómata CONTINUO (no se traba en loops)
     # Errores van al trap que consume todo el resto
     P.add_transition("q0", "trap", "b", "Z", "Z")  # Error: b al inicio
     P.add_transition("q2", "trap", "a", "Z", "Z")  # Error: símbolo después de aceptar

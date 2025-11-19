@@ -19,7 +19,8 @@ class AP(ABC):
         self.states = set()
         self.initial_state = None
         self.final_states = set()
-        self.transitions = {}  # {(estado, símbolo_entrada, símbolo_pila): [(nuevo_estado, cadena_pila)]}
+        # Formato: {(estado, símbolo_entrada, símbolo_pila): [(nuevo_estado, cadena_pila)]}
+        self.transitions = {}
         self.input_alphabet = set()  # Alfabeto de entrada
         self.stack_alphabet = set()  # Alfabeto de pila
         self.initial_stack_symbol = SpecialStackSymbol.EMPTY  # Símbolo inicial de pila
@@ -97,7 +98,7 @@ class AP(ABC):
         if not self.transitions:
             return "No hay transiciones definidas."
 
-        # Agrupar transiciones por estado
+        # Agrupar transiciones por estado origen
         state_transitions = {}
         for (state, input_sym, stack_sym), targets in self.transitions.items():
             if state not in state_transitions:
@@ -108,25 +109,26 @@ class AP(ABC):
             if isinstance(targets, tuple) and len(targets) == 2 and isinstance(targets[1], str):
                 # APD: targets es directamente (new_state, stack_string)
                 new_state, stack_string = targets
-                stack_str = stack_string if stack_string else LAMBDA
-                input_str = input_sym if input_sym else LAMBDA
-                stack_sym_str = stack_sym if stack_sym else LAMBDA
+                stack_str = stack_string if stack_string else SpecialStackSymbol.LAMBDA
+                input_str = input_sym if input_sym else SpecialStackSymbol.LAMBDA
+                stack_sym_str = stack_sym if stack_sym else SpecialStackSymbol.LAMBDA
                 state_transitions[state].append(
                     f"({input_str}, {stack_sym_str}) → ({new_state}, {stack_str})"
                 )
             else:
                 # APND o caso general: targets es una colección de tuplas
                 for new_state, stack_string in targets:
-                    stack_str = stack_string if stack_string else LAMBDA
-                    input_str = input_sym if input_sym else LAMBDA
-                    stack_sym_str = stack_sym if stack_sym else LAMBDA
+                    stack_str = stack_string if stack_string else SpecialStackSymbol.LAMBDA
+                    input_str = input_sym if input_sym else SpecialStackSymbol.LAMBDA
+                    stack_sym_str = stack_sym if stack_sym else SpecialStackSymbol.LAMBDA
                     state_transitions[state].append(
                         f"({input_str}, {stack_sym_str}) → ({new_state}, {stack_str})"
                     )
 
-        # Crear tabla
+        # Crear tabla con los estados y sus transiciones
         table = []
         for state in sorted(self.states, key=str):
+            # Marcar estado inicial (^) y finales (*)
             state_marker = ""
             if state == self.initial_state:
                 state_marker = "^"
@@ -139,7 +141,7 @@ class AP(ABC):
         return tabulate(table, headers=["Estado", "Transiciones δ(q, a, X)"], tablefmt="fancy_grid")
 
     def __str__(self):
-        """Imprime el autómata."""
+        """Imprimirr el autómata."""
         return (f"{self.__class__.__name__}"
                 f"<Q={len(self.states)} estados, "
                 f"Σ={self.input_alphabet}, "
@@ -149,7 +151,7 @@ class AP(ABC):
                 f"F={len(self.final_states)} finales>")
 
     def _rename_state(self, old_name: Hashable, new_name: Hashable):
-        """Renombra un estado del autómata."""
+        """Renombrar un estado del autómata."""
         if old_name != new_name:
             self.states.remove(old_name)
             self.states.add(new_name)
@@ -158,6 +160,7 @@ class AP(ABC):
             if old_name in self.final_states:
                 self.final_states.remove(old_name)
                 self.final_states.add(new_name)
+            #  hay que renombrar también en las transiciones
             self._rename_state_in_transitions(old_name, new_name)
 
     @abstractmethod

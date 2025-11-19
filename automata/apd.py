@@ -6,13 +6,12 @@ __all__ = ["APD"]
 SIMBOLO_LAMBDA = None
 
 class APD(AP):
-    """
-    Autómata de Pila Determinístico
-    """
+    """Autómata de Pila Determinístico."""
 
     def __init__(self):
         super().__init__()
-        self.transitions = {}  # {(estado, input, stack_top): (new_state, stack_string)}
+        # Formato: {(estado, input, stack_top): (new_state, stack_string)}
+        self.transitions = {}
 
     def add_transition(self, state: Hashable, new_state: Hashable,
                       input_symbol: Optional[str], stack_top: str,
@@ -35,18 +34,22 @@ class APD(AP):
             raise ValueError(f"El estado {state} no pertenece al autómata.")
         if new_state not in self.states:
             raise ValueError(f"El estado {new_state} no pertenece al autómata.")
-
-        # Verificar determinismo
+ 
         key = (state, input_symbol, stack_top)
+        # key = set()
+        #key.add(state)
+        #key.add(input_symbol)
+        #key.add(stack_top)
         
-        # Verificar que no existe ya una transición para esta clave
+        # chequear que no existe ya una transición para esta clave
         if key in self.transitions:
             raise ValueError(
                 f"Ya existe una transición para ({state}, {input_symbol or SIMBOLO_LAMBDA}, {stack_top}). "
                 f"El autómata no sería determinístico."
             )
         
-        # Verificar que no hay conflicto con transiciones lambda para no romper el determinismo
+        # chequear que no hay conflicto con transiciones lambda
+        # para que siga siendo deterministico
         if input_symbol is not None:
             epsilon_key = (state, None, stack_top)
             if epsilon_key in self.transitions:
@@ -55,7 +58,7 @@ class APD(AP):
                     f"No se puede agregar transición con símbolo de entrada."
                 )
         else:
-            # Si agregamos transicion lambda, verificar que no hay transiciones con simbolos para no romper el determinismo
+            # y si agregamos transicion lambda, no debe haber transiciones con símbolos
             for symbol in self.input_alphabet:
                 symbol_key = (state, symbol, stack_top)
                 if symbol_key in self.transitions:
@@ -64,9 +67,9 @@ class APD(AP):
                         f"No se puede agregar transicion lambda."
                     )
         
-        # Agregar transición
         self.transitions[key] = (new_state, stack_push)
-        # Actualizar alfabetos
+        
+        # vamos extendiendo los alfabetos con las transiciones que vemos
         if input_symbol is not None:
             self.input_alphabet.add(input_symbol)
         self.stack_alphabet.add(stack_top)
@@ -92,7 +95,7 @@ class APD(AP):
         Args:
             state: Estado actual
             remaining_input: Cadena restante por leer
-            stack: Pila actual (lista donde el último elemento es el tope)
+            stack: Pila actual (lista, el ultimo elemento es el tope)
         
         Returns:
             Tupla (nuevo_estado, nueva_cadena, nueva_pila) o None si no hay transición
@@ -102,19 +105,19 @@ class APD(AP):
         
         stack_top = stack[-1]
         
-        # Intentar transición con símbolo de entrada
+        # primero intentamos transicion con símbolo de entrada (si hay input disponible)
         if remaining_input:
             input_symbol = remaining_input[0]
             transition = self.get_transition(state, input_symbol, stack_top)
             if transition:
                 new_state, stack_string = transition
                 new_stack = stack[:-1]  # pop del tope
-                # Push de la cadena (de derecha a izquierda para que el primero quede arriba)
+                # push de la cadena (de derecha a izquierda para que el primero quede arriba)
                 for symbol in reversed(stack_string):
                     new_stack.append(symbol)
                 return (new_state, remaining_input[1:], new_stack)
         
-        # Intentar transicion lambda
+        # Intentar transicion lambda (sin consumir input)
         transition = self.get_transition(state, None, stack_top)
         if transition:
             new_state, stack_string = transition
@@ -131,17 +134,17 @@ class APD(AP):
         
         Args:
             word: Cadena a verificar
-            acceptance_mode: "final_state" (aceptación por estado final) o 
-                           "empty_stack" (aceptación por pila vacía)
+            acceptance_mode: "final_state" (aceptación por estado final) o "empty_stack" (aceptación por pila vacía)
         
         Returns:
             True si la cadena es aceptada, False en caso contrario
         """
         state = self.initial_state
+        #stack = [self.initial_stack_symbol]
         remaining_input = word
         stack = [self.initial_stack_symbol]
         
-        # Ejecutar el autómata
+        #max_steps = 10000 #esto para que termine si se cuelga en un loop
         max_steps = len(word) * 100 + 1000  # para evitar loops infinitos
         steps = 0
         
@@ -149,7 +152,7 @@ class APD(AP):
             steps += 1
             
             # Verificar condiciones de aceptación
-            if not remaining_input:  # Input consumido
+            if not remaining_input:  # input consumido
                 if acceptance_mode == "final_state":
                     if state in self.final_states:
                         return True
@@ -160,12 +163,11 @@ class APD(AP):
             # Intentar dar un paso
             result = self.step(state, remaining_input, stack)
             if result is None:
-                # No hay transición posible
+                # No hay transición posible, el autómata se traba
                 break
             
             state, remaining_input, stack = result
         
-        # Verificar condiciones finales
         if not remaining_input:
             if acceptance_mode == "final_state":
                 return state in self.final_states
